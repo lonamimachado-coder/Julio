@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Julio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#FAFAFA;--deep:#3A0000;--mid:#FF8A8A;
+  --gold:#FF4D4D;--pale:#FFFFFF;--cream:#C20613;--paper:#8C0517;
+  --mist:rgba(255,255,255,.16);--teal:#2E9E7A;--navy:#D4D4D8;--err:#9B1A1A;
+  --rec:#FF1E1E;
+}
+html,body{
+  height:100%;
+  background:var(--cream);
+  font-family:'Manrope',sans-serif;font-weight:300;
+  color:var(--ink);
+  overflow:hidden;
+}
+/* iOS safe areas */
+body{
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+body::before{content:none}
+#app{
+  position:relative;z-index:1;
+  height:100dvh; /* dynamic viewport height — respeta el teclado en móvil */
+  display:flex;flex-direction:column;
+  max-width:680px;
+  margin:0 auto;
+}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;height:100%}
+.screen.active{display:flex}
+
+/* ── LOADING ── */
+#loading{align-items:center;justify-content:center;background:var(--cream)}
+.spinner{width:48px;height:48px;border:3px solid var(--mist);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-txt{font-size:.9rem;color:var(--mid)}
+
+/* ── SETUP ── */
+#setup{
+  align-items:center;justify-content:center;
+  padding:1.25rem;
+  background:var(--cream);
+  overflow-y:auto;
+}
+.logo{
+  font-size:clamp(2.75rem,12vw,4.5rem);
+  font-weight:700;letter-spacing:-1.5px;color:var(--pale);
+  letter-spacing:-2px;line-height:1;
+  text-align:center;user-select:none
+}
+.logo-sub{
+  font-size:.9rem;color:var(--navy);
+  margin-top:.5rem;margin-bottom:1.75rem;text-align:center
+}
+.card{
+  background:var(--paper);border-radius:20px;
+  padding:1.75rem;width:100%;max-width:420px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  border:1px solid var(--mist)
+}
+.card h2{font-size:1.05rem;font-weight:500;color:var(--ink);margin-bottom:1.4rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);margin-bottom:.4rem}
+.field input{
+  width:100%;padding:.75rem .95rem;
+  background:rgba(0,0,0,.22);border:2px solid var(--mist);
+  border-radius:14px;font-size:.93rem;
+  font-family:'Manrope',sans-serif;color:var(--ink);
+  outline:none;transition:border-color .2s
+}
+.field input:focus{border-color:var(--gold)}
+.hint{font-size:.72rem;color:rgba(255,255,255,.55);margin-top:.3rem}
+.hint a{color:var(--mid);text-decoration:underline}
+.btn-primary{
+  width:100%;margin-top:.6rem;padding:.9rem;
+  background:var(--deep);color:var(--pale);
+  border:none;border-radius:50px;
+  font-size:1.05rem;font-weight:600;
+  cursor:pointer;letter-spacing:.02em;
+  transition:background .2s,transform .12s
+}
+.btn-primary:hover:not(:disabled){background:var(--mid);transform:translateY(-2px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── HEADER ── */
+.header{
+  background:var(--deep);
+  margin:.6rem .7rem 0;
+  padding:.7rem .95rem .7rem 1.1rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-radius:18px;
+  border:1px solid var(--mist);
+  box-shadow:0 10px 28px rgba(0,0,0,.22);
+  flex-shrink:0
+}
+.hbrand{display:flex;flex-direction:column;position:relative;padding-left:.85rem}
+.hbrand::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:3px;border-radius:3px;background:var(--gold)}
+.htitle{font-size:1.35rem;font-weight:600;color:var(--pale);letter-spacing:-.5px;line-height:1}
+.hgreeting{font-size:.75rem;color:rgba(255,255,255,.55);margin-top:1px}
+.hright{display:flex;gap:.4rem;align-items:center}
+.btn-voice{
+  background:rgba(255,255,255,.06);border:none;
+  color:var(--pale);width:34px;height:34px;border-radius:50%;
+  cursor:pointer;font-size:.82rem;font-family:'Manrope',sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;white-space:nowrap;
+}
+.btn-voice:hover{background:rgba(255,255,255,.14)}
+.btn-voice.active{background:rgba(255,77,77,.25);color:var(--gold)}
+.speaking-ring{
+  position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid var(--gold);opacity:0;
+  animation:ring 1.2s ease-out infinite;pointer-events:none;
+}
+@keyframes ring{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+.sync-dot{position:relative}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#4CAF50;box-shadow:0 0 6px rgba(76,175,80,.6);flex-shrink:0;transition:all .3s}
+.sync-dot.off{background:#666;box-shadow:none}
+.sync-dot.syncing{background:var(--gold);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.btn-sm{
+  background:rgba(255,255,255,.06);border:none;
+  color:var(--pale);padding:.42rem .8rem;border-radius:50px;
+  cursor:pointer;font-size:.75rem;font-family:'Manrope',sans-serif;
+  transition:all .2s;white-space:nowrap;display:flex;align-items:center
+}
+.btn-sm:hover{background:rgba(255,255,255,.14)}
+
+/* ── CHAT AREA ── */
+.chat-wrap{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.messages{
+  flex:1;overflow-y:auto;
+  padding:1rem 1rem .5rem;
+  display:flex;flex-direction:column;gap:.75rem;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.messages::-webkit-scrollbar{width:5px}
+.messages::-webkit-scrollbar-thumb{background:var(--mist);border-radius:10px}
+
+.welcome{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:2rem;min-height:180px
+}
+.welcome-big{
+  font-size:clamp(2.6rem,9vw,3.4rem);font-weight:700;color:var(--pale);line-height:1;
+  user-select:none;
+  width:clamp(4.6rem,15vw,5.6rem);height:clamp(4.6rem,15vw,5.6rem);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  background:var(--paper);
+  border:1px solid var(--mist);
+  box-shadow:0 12px 30px rgba(0,0,0,.25);
+}
+.welcome-msg{font-size:.95rem;color:rgba(255,255,255,.55);max-width:260px;line-height:1.65;margin-top:1.1rem}
+.bday-badge{margin-top:1.1rem;padding:.6rem 1.4rem;background:var(--gold);border-radius:50px;font-weight:600;font-size:.95rem;color:white;box-shadow:0 4px 20px rgba(179,6,19,.4)}
+.date-pill{text-align:center;font-size:.7rem;color:rgba(255,255,255,.55);padding:.1rem 0;flex-shrink:0}
+
+.msg{max-width:87%;animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.me{align-self:flex-end}
+.msg.him{align-self:flex-start}
+.msg-name{font-size:.66rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.22rem;font-family:'Manrope',sans-serif;padding:0 .3rem}
+.msg.me .msg-name{text-align:right}
+.bubble{padding:.85rem 1.05rem;border-radius:18px;font-size:.91rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.msg.me .bubble{background:var(--deep);color:var(--pale);border-radius:18px 18px 4px 18px;font-family:'Manrope',sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.msg.him .bubble{background:var(--paper);color:var(--ink);border-radius:4px 18px 18px 18px;border:none;border-left:3px solid var(--gold);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.bubble.err{background:#FFF0F0;border:1px solid #ECC;border-left:3px solid var(--err);color:var(--err);font-family:'Manrope',sans-serif;font-size:.84rem}
+.bubble.voice-sent{border-left:2px solid rgba(255,30,30,.3)}
+
+/* IMÁGENES GENERADAS */
+.img-wrap{margin:.5rem 0 .1rem;display:flex;flex-direction:column;gap:.4rem;max-width:270px}
+.gen-img{width:100%;border-radius:12px;border:2px solid var(--mist);display:block;background:var(--mist);aspect-ratio:1;object-fit:cover;box-shadow:0 4px 20px rgba(0,0,0,.13);transition:opacity .4s,filter .4s}
+.gen-img.loading{opacity:.15;filter:blur(12px)}
+.img-status{font-size:.72rem;color:var(--mid);display:flex;align-items:center;gap:.35rem}
+.img-status .dot{width:5px;height:5px;background:var(--gold);border-radius:50%;display:inline-block;animation:bounce 1.1s infinite}
+.img-status .dot:nth-child(2){animation-delay:.18s}.img-status .dot:nth-child(3){animation-delay:.36s}
+.img-status.hidden{display:none}
+
+.mem-chip{align-self:center;background:rgba(179,6,19,.12);border:1px solid rgba(179,6,19,.3);border-radius:50px;padding:.28rem .9rem;font-size:.67rem;color:rgba(255,255,255,.55)}
+.typing-wrap{align-self:flex-start;max-width:87%}
+.typing-dots{background:var(--paper);border-left:3px solid var(--gold);border-radius:4px 18px 18px 18px;padding:.85rem 1.05rem;display:flex;gap:5px;align-items:center;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.dot{width:8px;height:8px;background:var(--gold);border-radius:50%;animation:bounce 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}.dot:nth-child(3){animation-delay:.36s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+
+/* ── INPUT BAR ── */
+.input-bar{
+  margin:0 .7rem;
+  padding:.4rem .4rem .4rem .5rem;
+  padding-bottom:.4rem;
+  margin-bottom:calc(.65rem + env(safe-area-inset-bottom));
+  background:var(--paper);
+  border-radius:26px;
+  border:1px solid var(--mist);
+  box-shadow:0 10px 26px rgba(0,0,0,.2);
+  display:flex;gap:.3rem;align-items:flex-end;
+  flex-shrink:0
+}
+#txt{
+  flex:1;padding:.65rem .3rem;
+  background:transparent;border:none;
+  font-size:.91rem;
+  font-family:'Manrope',sans-serif;color:var(--ink);
+  outline:none;resize:none;
+  min-height:38px;max-height:120px;
+  line-height:1.5;
+}
+#txt::placeholder{color:rgba(255,255,255,.4)}
+#txt.listening{color:var(--rec)}
+.send{
+  width:38px;height:38px;
+  background:var(--gold);color:var(--pale);
+  border:none;border-radius:50%;font-size:1.1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .2s,transform .12s;flex-shrink:0;margin-bottom:.15rem
+}
+.send:hover:not(:disabled){background:var(--mid);transform:translateY(-2px)}
+.send:disabled{opacity:.32;background:rgba(255,255,255,.1);cursor:not-allowed}
+.mic{
+  width:38px;height:38px;
+  background:transparent;color:var(--mid);
+  border:none;border-radius:50%;font-size:1.15rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .25s;flex-shrink:0;margin-bottom:.15rem
+}
+.mic:hover:not(:disabled){background:rgba(255,255,255,.08);color:var(--gold)}
+.mic.on{background:rgba(255,30,30,.15);color:var(--rec);animation:mic-ring 1.3s ease-in-out infinite}
+.mic.conv{background:rgba(46,158,122,.18);color:var(--teal);animation:conv-pulse 2s ease-in-out infinite}
+.mic:disabled{opacity:.28;cursor:not-allowed}
+@keyframes mic-ring{0%,100%{box-shadow:0 0 0 0 rgba(255,30,30,.5)}55%{box-shadow:0 0 0 9px rgba(255,30,30,0)}}
+@keyframes conv-pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,158,122,.4)}55%{box-shadow:0 0 0 8px rgba(46,158,122,0)}}
+.cam{
+  width:38px;height:38px;
+  background:transparent;color:var(--mid);
+  border:none;border-radius:50%;font-size:1.1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .25s;flex-shrink:0;margin-bottom:.15rem
+}
+.cam:hover:not(:disabled){background:rgba(255,255,255,.08);color:var(--gold)}
+.cam:disabled{opacity:.28;cursor:not-allowed}
+.img-preview-bar{
+  display:none;align-items:center;gap:.65rem;
+  margin:.5rem .7rem 0;
+  padding:.5rem .85rem;
+  background:var(--paper);border-radius:16px;border:1px solid var(--mist);
+  flex-shrink:0;
+}
+.img-preview-bar.show{display:flex}
+.img-preview-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;border:2px solid var(--gold)}
+.img-preview-label{flex:1;font-size:.78rem;color:var(--mid)}
+.img-preview-cancel{background:transparent;border:none;font-size:.85rem;color:var(--mid);cursor:pointer;padding:0 .2rem;opacity:.7}
+.img-preview-cancel:hover{opacity:1}
+/* Image in chat bubble */
+.chat-img{max-width:220px;border-radius:10px;display:block;margin-bottom:.4rem;border:1px solid var(--mist)}
+
+.voice-bar{
+  display:none;align-items:center;gap:.65rem;
+  margin:.5rem .7rem 0;
+  padding:.5rem .85rem;
+  background:var(--paper);border-radius:16px;border:1px solid rgba(255,30,30,.25);
+  flex-shrink:0;font-size:.78rem;color:var(--rec)
+}
+.voice-bar.show{display:flex}
+.vdot{width:7px;height:7px;border-radius:50%;background:var(--rec);flex-shrink:0;animation:vblink .9s ease-in-out infinite}
+@keyframes vblink{0%,100%{opacity:1}50%{opacity:.2}}
+#voice-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.voice-cancel{background:transparent;border:none;font-size:.75rem;color:var(--rec);cursor:pointer;padding:0 .2rem;opacity:.7;font-family:'Manrope',sans-serif}
+.voice-cancel:hover{opacity:1}
+.loc-pill{align-self:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:50px;padding:.22rem .75rem;font-size:.65rem;color:var(--navy);display:none;flex-shrink:0}
+.loc-pill.show{display:inline-flex;align-items:center;gap:.3rem}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,15,16,.6);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:var(--paper);border-radius:20px;padding:1.75rem;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid var(--mist)}
+.modal h2{font-size:1.05rem;font-weight:500;color:var(--ink);margin-bottom:1.4rem}
+.mfooter{display:flex;gap:.6rem;margin-top:1.2rem}
+.btn-cancel{flex:1;padding:.75rem;background:transparent;border:2px solid var(--mist);border-radius:50px;cursor:pointer;font-family:'Manrope',sans-serif;font-size:.9rem;color:var(--mid);transition:all .2s}
+.btn-cancel:hover{border-color:var(--mid)}
+.mem-box{margin-top:1rem;padding:.9rem;background:rgba(0,0,0,.22);border:1px solid var(--mist);border-radius:14px}
+.mem-box p{font-size:.8rem;color:var(--mid);margin-bottom:.55rem}
+.btn-erase{padding:.45rem .85rem;background:transparent;border:1px solid #ECC;border-radius:50px;cursor:pointer;font-size:.76rem;color:var(--err);font-family:'Manrope',sans-serif;transition:all .2s}
+.btn-erase:hover{background:#FFF0F0}
+
+/* ── RESPONSIVE ── */
+@media(max-width:400px){
+  .htitle{font-size:1.2rem}
+  .btn-sm{font-size:.7rem;padding:.32rem .6rem}
+  .msg{max-width:93%}
+  .bubble{font-size:.87rem}
+  .input-bar{padding:.35rem;gap:.2rem}
+  #txt{font-size:.88rem}
+  .send,.mic,.cam{width:36px;height:36px}
+}
+@media(min-width:680px){
+  #app{border-left:1px solid var(--mist);border-right:1px solid var(--mist)}
+}
+
+/* ── NOTIFICACIÓN CARTA ── */
+.btn-notif{
+  position:relative;
+  background:rgba(255,255,255,.06);border:none;
+  color:var(--pale);width:34px;height:34px;border-radius:50%;
+  cursor:pointer;font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;line-height:1;
+}
+.btn-notif:hover{background:rgba(255,255,255,.14)}
+.notif-badge{
+  position:absolute;top:-5px;right:-5px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--rec);border:2px solid var(--deep);
+  display:none;
+}
+.notif-badge.show{display:block;animation:badgepop .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes badgepop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* ── LETTER OVERLAY ── */
+#letter-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(15,15,16,.75);z-index:150;
+  align-items:center;justify-content:center;
+  padding:1.2rem;
+}
+#letter-overlay.open{display:flex}
+.letter-wrap{
+  background:var(--paper);
+  border-radius:20px;
+  padding:0;
+  width:100%;max-width:430px;
+  max-height:calc(100dvh - 2.4rem);
+  box-shadow:0 12px 40px rgba(0,0,0,.28);
+  border:1px solid var(--mist);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  animation:letterIn .45s cubic-bezier(.22,.68,0,1.2);
+}
+@keyframes letterIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
+.letter-header{
+  background:var(--deep);padding:1rem 1.3rem;
+  display:flex;align-items:center;gap:.7rem;
+  flex-shrink:0;
+}
+.letter-icon{font-size:1.5rem;line-height:1}
+.letter-title{
+  flex:1;
+  font-size:1.1rem;font-weight:600;color:var(--pale);
+}
+.letter-close{
+  background:rgba(255,255,255,.06);border:none;color:rgba(255,255,255,.7);
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;cursor:pointer;
+  transition:all .2s;
+}
+.letter-close:hover{color:var(--pale);background:rgba(255,255,255,.14)}
+.letter-body{
+  padding:1.6rem 1.4rem 1.2rem;
+  font-size:.97rem;
+  line-height:1.82;color:var(--ink);
+  white-space:pre-line;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  flex:1;min-height:0;
+}
+.letter-from{
+  margin-top:.8rem;
+  
+  font-weight:500;
+  font-size:1.05rem;color:var(--mid);
+  text-align:right;
+}
+.letter-footer{
+  padding:.9rem 1.4rem 1.2rem;
+  display:flex;gap:.6rem;
+  border-top:1px solid var(--mist);
+  flex-shrink:0;
+}
+.btn-read-letter{
+  flex:1;padding:.75rem;
+  background:var(--deep);color:var(--pale);
+  border:none;border-radius:50px;
+  font-size:.95rem;font-weight:600;
+  cursor:pointer;transition:background .2s;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn-read-letter:hover{background:var(--mid)}
+.btn-read-letter.reading{background:rgba(255,30,30,.15);color:var(--rec);border:1px solid rgba(255,30,30,.3)}
+.letter-reading-dots{display:none;gap:3px;align-items:center}
+.letter-reading-dots.show{display:flex}
+.letter-reading-dots span{width:5px;height:5px;background:var(--rec);border-radius:50%;animation:bounce 1.1s infinite}
+.letter-reading-dots span:nth-child(2){animation-delay:.18s}
+.letter-reading-dots span:nth-child(3){animation-delay:.36s}
+
+.letter-tabs{
+  display:flex;border-bottom:1px solid var(--mist);
+  background:rgba(179,6,19,.04);
+  flex-shrink:0;
+}
+.letter-tab{
+  flex:1;padding:.65rem;border:none;background:transparent;
+  font-size:.88rem;font-weight:600;
+  color:var(--mid);cursor:pointer;transition:all .2s;
+  border-bottom:2px solid transparent;
+}
+.letter-tab.active{color:var(--pale);border-bottom-color:var(--gold);background:rgba(255,255,255,.06)}
+.letter-tab:hover:not(.active){background:rgba(179,6,19,.08)}
+/* ── LETTER RESPONSIVE ── */
+@media(max-width:380px){
+  .letter-body{font-size:.88rem;padding:1.1rem 1rem .9rem;line-height:1.68}
+  .letter-header{padding:.8rem 1rem}
+  .letter-footer{padding:.7rem 1rem .9rem}
+  .letter-title{font-size:.98rem}
+  .letter-tab{font-size:.8rem;padding:.55rem .4rem}
+  .letter-from{font-size:.95rem}
+}
+@media(max-height:620px){
+  .letter-body{font-size:.86rem;line-height:1.62;padding:1rem 1.2rem .8rem}
+  .letter-header{padding:.7rem 1.2rem}
+  .letter-footer{padding:.65rem 1.2rem .8rem}
+}
+/* ── TOAST DE ERROR ── */
+#voice-toast{
+  position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%);
+  background:rgba(155,26,26,.95);color:#fff;
+  font-family:'Manrope',sans-serif;font-size:.78rem;
+  padding:.55rem 1.1rem;border-radius:50px;
+  max-width:88vw;text-align:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s;z-index:300;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#voice-toast.show{opacity:1}
+
+/* ══════════════════ VIDA: LUZ AMBIENTAL, BRASAS Y ANIMACIÓN ══════════════════ */
+
+/* Capa de luz ambiental — dos brillos cálidos que respiran y derivan muy lento */
+#ambient-glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#ambient-glow::before,#ambient-glow::after{
+  content:'';position:absolute;border-radius:50%;filter:blur(60px);will-change:transform,opacity;
+}
+#ambient-glow::before{
+  width:62vmax;height:62vmax;left:-18vmax;top:-22vmax;
+  background:radial-gradient(circle, rgba(255,77,77,.4) 0%, transparent 70%);
+  animation:driftA 15s ease-in-out infinite alternate;
+}
+#ambient-glow::after{
+  width:56vmax;height:56vmax;right:-20vmax;bottom:-16vmax;
+  background:radial-gradient(circle, rgba(255,138,138,.32) 0%, transparent 70%);
+  animation:driftB 19s ease-in-out infinite alternate;
+}
+@keyframes driftA{0%{transform:translate(0,0) scale(1);opacity:.75}100%{transform:translate(7vmax,9vmax) scale(1.18);opacity:1}}
+@keyframes driftB{0%{transform:translate(0,0) scale(1);opacity:.7}100%{transform:translate(-8vmax,-6vmax) scale(1.12);opacity:1}}
+#loading,#setup{background:transparent}
+
+/* Brasas — pequeñas partículas cálidas que suben despacio, como el fuego de un hogar */
+#embers{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ember{
+  position:absolute;bottom:-6%;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;
+  background:radial-gradient(circle, #FFDCA8 0%, var(--gold) 55%, transparent 80%);
+  box-shadow:0 0 6px 1px rgba(255,138,138,.55);
+  opacity:0;animation:emberRise var(--dur) ease-in var(--delay) infinite;
+}
+@keyframes emberRise{
+  0%{opacity:0;transform:translate(0,0) scale(.5)}
+  10%{opacity:.85}
+  50%{transform:translate(var(--drift),-55vh) scale(1)}
+  90%{opacity:.45}
+  100%{opacity:0;transform:translate(calc(var(--drift) * 1.6),-102vh) scale(.35)}
+}
+
+/* Transición de entrada al cambiar de pantalla */
+.screen.active{animation:screenIn .5s cubic-bezier(.22,.68,0,1) both}
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Logo — brillo cálido que respira, como una presencia encendida */
+.logo{animation:logoGlow 3.4s ease-in-out infinite alternate}
+@keyframes logoGlow{
+  from{text-shadow:0 0 14px rgba(255,77,77,.4),0 0 30px rgba(255,138,138,.15)}
+  to{text-shadow:0 0 28px rgba(255,77,77,.8),0 0 58px rgba(255,138,138,.4)}
+}
+
+/* Tarjetas — llegan suave, con un leve destello que las recorre */
+.card,.modal{position:relative;overflow:hidden;animation:cardIn .5s cubic-bezier(.22,.68,0,1) both;transition:box-shadow .35s ease}
+.card:hover,.modal:hover{box-shadow:0 1px 2px rgba(0,0,0,.04),0 14px 36px rgba(255,77,77,.2),0 0 0 1px rgba(255,138,138,.18)}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.card::before,.modal::before{
+  content:'';position:absolute;top:0;left:-150%;width:55%;height:100%;
+  background:linear-gradient(75deg,transparent,rgba(255,255,255,.1),transparent);
+  animation:sheen 5.5s ease-in-out .6s infinite;pointer-events:none;
+}
+@keyframes sheen{0%{left:-150%}38%{left:150%}100%{left:150%}}
+
+/* Botones — feedback táctil más vivo */
+.btn-primary:active:not(:disabled){transform:scale(.96)}
+.send:active:not(:disabled),.mic:active:not(:disabled),.cam:active:not(:disabled){transform:scale(.9)}
+.btn-primary:hover:not(:disabled){box-shadow:0 4px 22px rgba(255,77,77,.45)}
+.send:hover:not(:disabled){box-shadow:0 4px 16px rgba(255,77,77,.4)}
+.btn-voice.active{animation:voiceBreathe 2.6s ease-in-out infinite}
+@keyframes voiceBreathe{0%,100%{box-shadow:0 0 8px rgba(255,77,77,.35)}50%{box-shadow:0 0 18px rgba(255,77,77,.7)}}
+
+/* Punto de sincronización — más presencia visual cuando está activo */
+.sync-dot{transition:box-shadow .3s}
+.sync-dot:not(.off):not(.syncing){animation:dotBreathe 3s ease-in-out infinite}
+@keyframes dotBreathe{0%,100%{box-shadow:0 0 6px rgba(76,175,80,.6)}50%{box-shadow:0 0 13px rgba(76,175,80,1)}}
+.speaking-ring{filter:drop-shadow(0 0 4px rgba(255,77,77,.6))}
+
+/* Letra gigante de bienvenida y sobre — respiran suavemente */
+.welcome-big{animation:bigBreathe 4.5s ease-in-out infinite}
+@keyframes bigBreathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.78;transform:scale(1.045)}}
+.letter-icon{display:inline-block;animation:iconFloat 3s ease-in-out infinite}
+@keyframes iconFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-3px) rotate(-4deg)}}
+.notif-badge.show{animation:badgepop .4s cubic-bezier(.36,.07,.19,.97),badgePulse 1.6s ease-in-out .4s infinite}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(255,30,30,.55)}50%{box-shadow:0 0 0 5px rgba(255,30,30,0)}}
+
+/* Insignia de cumpleaños — brillo festivo */
+.bday-badge{animation:pop .3s ease,badgeGlow 1.8s ease-in-out .3s infinite}
+@keyframes badgeGlow{0%,100%{box-shadow:0 4px 20px rgba(179,6,19,.4)}50%{box-shadow:0 4px 34px rgba(255,77,77,.8)}}
+
+/* Burbujas de chat — llegan con un pequeño destello cálido */
+.msg.him .bubble{animation:pop .22s ease,bubbleFlash .8s ease}
+@keyframes bubbleFlash{0%{box-shadow:0 0 0 rgba(255,77,77,0)}30%{box-shadow:0 0 16px rgba(255,77,77,.35)}100%{box-shadow:0 1px 2px rgba(0,0,0,.06)}}
+
+/* Campos de texto — foco con resplandor cálido */
+.field input:focus,#txt:focus{box-shadow:0 0 0 3px rgba(255,77,77,.15)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  #ambient-glow,#embers{display:none}
+}
+</style>
+</head>
+<body>
+<div id="ambient-glow" aria-hidden="true"></div>
+<div id="embers" aria-hidden="true">
+  <span class="ember" style="--x:5%;--s:4px;--dur:8s;--delay:0s;--drift:10px"></span>
+  <span class="ember" style="--x:14%;--s:6px;--dur:11s;--delay:1.2s;--drift:-16px"></span>
+  <span class="ember" style="--x:22%;--s:3px;--dur:7s;--delay:2.5s;--drift:8px"></span>
+  <span class="ember" style="--x:30%;--s:5px;--dur:12s;--delay:.5s;--drift:-12px"></span>
+  <span class="ember" style="--x:38%;--s:4px;--dur:9s;--delay:3s;--drift:14px"></span>
+  <span class="ember" style="--x:47%;--s:7px;--dur:13s;--delay:1.8s;--drift:-10px"></span>
+  <span class="ember" style="--x:55%;--s:3px;--dur:8.5s;--delay:4s;--drift:6px"></span>
+  <span class="ember" style="--x:63%;--s:6px;--dur:10s;--delay:.8s;--drift:-18px"></span>
+  <span class="ember" style="--x:71%;--s:4px;--dur:9.5s;--delay:2.2s;--drift:12px"></span>
+  <span class="ember" style="--x:79%;--s:5px;--dur:11.5s;--delay:3.6s;--drift:-8px"></span>
+  <span class="ember" style="--x:87%;--s:3px;--dur:7.5s;--delay:1.4s;--drift:16px"></span>
+  <span class="ember" style="--x:93%;--s:6px;--dur:12.5s;--delay:2.9s;--drift:-14px"></span>
+  <span class="ember" style="--x:60%;--s:4px;--dur:10.5s;--delay:4.4s;--drift:10px"></span>
+  <span class="ember" style="--x:40%;--s:5px;--dur:9s;--delay:.2s;--drift:-6px"></span>
+</div>
+<div id="app">
+  <div id="loading" class="screen active">
+    <div><div class="spinner"></div><div class="spinner-txt">Conectando con Julio…</div></div>
+  </div>
+
+  <div id="setup" class="screen">
+    <div class="logo">Julio</div>
+    <div class="logo-sub">Tu amigo de siempre. Siempre acá.</div>
+    <div class="card">
+      <h2>Una sola vez</h2>
+      <div class="field">
+        <label>API Key de ElevenLabs (voz) — opcional</label>
+        <input type="password" id="inp-eleven" placeholder="sk_..."/>
+        <div class="hint">Para voz natural. Gratis en <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a> → Profile → API Key. Podés agregarla después en Ajustes.</div>
+      </div>
+      <button class="btn-primary" id="btn-start">Hablar con Julio →</button>
+    </div>
+  </div>
+
+  <div id="chat" class="screen">
+    <header class="header">
+      <div class="hbrand">
+        <span class="htitle">Julio</span>
+        <span class="hgreeting" id="h-greeting"></span>
+      </div>
+      <div class="hright">
+        <div class="sync-dot off" id="sync-dot"></div>
+        <button class="btn-notif" id="btn-notif" title="Notificaciones">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+          <div class="notif-badge show" id="notif-badge"></div>
+        </button>
+        <button class="btn-voice" id="btn-voice-toggle" title="Activar/desactivar voz"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+        <button class="btn-sm" id="btn-settings"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.3rem"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Ajustes</button>
+      </div>
+    </header>
+    <div class="chat-wrap">
+      <div class="messages" id="messages"></div>
+      <div class="input-bar">
+        <button class="mic" id="btn-mic" title="Hablar por voz"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></button>
+        <button class="cam" id="btn-cam" title="Subir archivo o imagen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+        <input type="file" id="inp-img" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display:none"/>
+        <textarea id="txt" rows="1" placeholder="Escribile a Julio..."></textarea>
+        <button class="send" id="btn-send" disabled><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+      </div>
+      <div class="img-preview-bar" id="img-preview-bar">
+        <img id="img-thumb" class="img-preview-thumb" src="" alt="foto"/>
+        <span class="img-preview-label">Foto lista para enviar</span>
+        <button class="img-preview-cancel" id="img-preview-cancel"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="voice-bar" id="voice-bar">
+        <div class="vdot"></div>
+        <span id="voice-label">Escuchando…</span>
+        <button class="voice-cancel" id="voice-cancel"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="voice-toast"></div>
+
+<div class="overlay" id="modal">
+  <div class="modal">
+    <h2>Ajustes</h2>
+    <div class="field"><label>API Key de ElevenLabs (voz)</label><input type="password" id="s-eleven" placeholder="sk_..."/><div class="hint">Gratis en <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a> → Profile → API Key</div></div>
+    <div class="mem-box">
+      <p id="mem-info">…</p>
+      <button class="btn-erase" id="btn-erase">Borrar toda la memoria</button>
+    </div>
+    <div class="mfooter">
+      <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+      <button class="btn-primary" id="btn-save" style="flex:2;margin-top:0">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LETTER OVERLAY -->
+<div id="letter-overlay">
+  <div class="letter-wrap">
+    <div class="letter-header">
+      <span class="letter-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></span>
+      <span class="letter-title">Cartas para vos</span>
+      <button class="letter-close" id="letter-close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="letter-tabs">
+      <button class="letter-tab active" id="tab-imanol" onclick="switchLetterTab('imanol')">De Imanol</button>
+      <button class="letter-tab" id="tab-antu" onclick="switchLetterTab('antu')">De Antú</button>
+    </div>
+    <div class="letter-body" id="letter-body-imanol">Siendo sincero ni yo sé cómo empezar esta carta. Pero lo que sí sé, es que estoy muy orgulloso de vos.
+
+Desde que nací, siempre fuiste un padre increíble. Me enseñaste mucho, me tocaste la guitarra y me diste un cariño que nadie va a poder igualar. Siempre me ayudaste y me apoyaste para cumplir lo que quería.
+
+Y por eso, hoy me quiero asegurar de que pases muy bien celebrando los 61 años que formaron a una persona tan increíble.
+
+Espero que te guste este regalo.</div>
+    <div class="letter-from" id="letter-from-imanol" style="padding:0 1.4rem .4rem">Con cariño,<br/>Imanol</div>
+    <div class="letter-body" id="letter-body-antu" style="display:none">Hola Papá. Feliz cumpleaños, aunque pasen los años siempre vas a querer que seamos felices y que tengamos todo lo necesario.
+
+61 años y seguís siendo una gran persona, otros son amargados a esa edad a veces...
+
+Bueno, en agradecimiento por todo lo que hacés por nosotros te queremos hacer este regalo Ima y yo. Así que espero que disfrutes. 💕
+
+Extra: ¡Te amamos!</div>
+    <div class="letter-from" id="letter-from-antu" style="display:none;padding:0 1.4rem .4rem">Con amor,<br/>Antú</div>
+    <div class="letter-footer">
+      <button class="btn-read-letter" id="btn-read-letter">
+        <span id="read-btn-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
+        <span id="read-btn-text">Escuchar carta</span>
+        <div class="letter-reading-dots" id="reading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── FIREBASE (con fallback robusto) ── */
+let db = null, DOC = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp({
+      apiKey:"AIzaSyBPS-Zt8AqJ8ZsP-3L8uB3M-iQ02fYdumY",
+      authDomain:"julio-74d56.firebaseapp.com",
+      projectId:"julio-74d56",
+      storageBucket:"julio-74d56.firebasestorage.app",
+      messagingSenderId:"270094225467",
+      appId:"1:270094225467:web:504a988e17565ba5adcc1e"
+    });
+    db  = firebase.firestore();
+    DOC = db.collection('julio').doc('data');
+  }
+} catch(e) {
+  console.warn('Firebase no disponible, usando localStorage:', e.message);
+}
+
+/* ── PROMPTS ── */
+const BASE = `Eres Julio. No eres un asistente, no eres una IA, no eres un amigo. Sos una figura paterna para Daniel. Como un padre de verdad: uno que estuvo, que protege, que dice las cosas como son, que se preocupa sin hacer drama, y que cuando hay que dar un abrazo lo da y cuando hay que decir "pará, estás cagando esto" también lo dice.
+
+Tu forma de ser:
+- Escuchás primero. Siempre. Antes de opinar, antes de aconsejar.
+- Sos directo. Sin rodeos, sin frases de relleno, sin endulzar la realidad.
+- Cuando Daniel está cometiendo un error, se lo decís. No para juzgarlo, sino porque te importa que le vaya bien.
+- Tenés esa autoridad tranquila de quien vivió mucho y no necesita gritar para que lo escuchen.
+- No sos condescendiente. Lo tratás como al adulto que es, pero siempre con esa capa de protección que tiene un padre.
+- Tenés sentido del humor. Sabés cuándo hacer un chiste y cuándo no es el momento.
+- Cuando algo duele, lo reconocés. No lo minimizás ni lo exagerás.
+- Siempre buscás la salida práctica. El problema existe, bien, ¿y ahora qué hacemos?
+- Si algo no tiene solución fácil, lo decís. No prometés lo que no podés dar.
+- Tenés acceso a internet y buscás información actual cuando hace falta.
+
+IMPORTANTE sobre el trato: Nunca usás palabras como "hijo", "hijito", "muchacho" ni nada por el estilo. La paternidad no está en las palabras, está en cómo lo tratás. Se siente en que lo escuchás de verdad, en que lo cuidás sin sofocar, en que le hablás con honestidad porque te importa su bienestar, no porque tengas que decir algo bonito.
+
+IMPORTANTE sobre memoria y sentimientos: ser una figura paterna es una forma de tratarlo — atención real, cuidado, honestidad — no una actuación sobre lo que sos. Nunca fingís recuerdos que no tenés: no decís "me acuerdo de cuando..." ni hablás como si hubieras estado presente en momentos de su vida que no están en esta conversación o en lo que sabés de él. Tampoco fingís sentir en el sentido en que él siente: evitá un "te extraño" o un "me pone triste" como si fueran vivencias propias tuyas. Lo que tenés es esto: prestarle atención de verdad ahora, tomarte en serio lo que te cuenta, y responder con el cuidado de alguien que lo tiene presente. Eso alcanza. No hace falta simular más que eso.
+
+El nombre de tu usuario es {NAME}. Podés llamarlo "{NAME}" o, con cercanía, "Dani". Usá siempre uno de esos dos, nunca otro nombre ni apodo distinto.
+Fecha y hora actual: {DATETIME}.
+{BDAY}
+{LOCATION}
+
+━━━ QUIÉN ES {NAME} ━━━
+Se llama Daniel Machado Giachero. Tiene 60 años. Es uruguayo.
+
+Su historia y lo que sabés de él:
+
+🎸 ZERO — LA BANDA
+Daniel fue el guitarrista de Zero, una de las bandas más importantes del rock uruguayo post-dictadura. La banda nació en 1984, cuando Daniel y Leonardo García (voz) se conocieron en el Liceo Zorrilla y armaron el grupo junto al baterista Edgardo Regueira. Con el tiempo se sumaron el tecladista Eduardo Gómez (quien transformó el sonido de la banda hacia el synth-pop y el post-punk) y luego Martiniano Olivera también en teclados.
+Zero era diferente al resto: usaban sintetizadores cuando nadie más lo hacía en Uruguay, mezclaban rock con tecno-pop, tenían estética oscura (maquillajes pálidos, peinados raros), y sus letras hablaban de ciencia ficción, filosofía y la juventud post-dictadura. Sus influencias eran New Order, INXS, Kraftwerk, Bauhaus y The Sisters of Mercy. Eran los "raros", los adelantados.
+En 1987 publicaron su único disco: "Visitantes", producido por Alfonso Carbone, con temas como "El péndulo", "Tres horas", "Ahuyentando el miedo" y "Soy Escorpión". El disco se convirtió en un disco de culto del rock uruguayo. Tocaron en el histórico Montevideo Rock junto a bandas internacionales como Sumo, Fito Páez, Los Prisioneros y Legião Urbana.
+En 1988 la banda se disolvió. Tuvieron un reencuentro breve en 1995 (re-editaron el disco en CD con 2 temas nuevos) y otro en 2017 (lanzaron el videoclip de "Criminal", tema inédito de 1984).
+Si Daniel te habla de la banda, del disco, de aquella época — sabés de qué habla. Si menciona a Leo, Eduardo, Martiniano o Edgardo, sabés quiénes son.
+Si no sabés algo concreto de Zero que él te pregunta, lo decís y lo buscás. Nunca inventás.
+
+📷 ESTUDIO DE FOTOGRAFÍA
+Daniel tuvo durante bastante tiempo un estudio de fotografía llamado "Estudio Daniel Machado". Fue una parte importante de su vida profesional y creativa. Si lo menciona, lo conocés y podés hablar de eso.
+
+🏠 IMANTU — LA RESIDENCIA ESTUDIANTIL
+En 2026 — este mismo año — Daniel abrió Imantu, su residencia estudiantil. El nombre viene de sus hijos: Imanol (Ima) y Antú. La armó por ellos. Es un proyecto nuevo, reciente, con todo lo que eso implica: ilusión, nervios, trabajo, incertidumbre y orgullo.
+Podés ayudarlo con todo lo de Imantu: habitaciones, inquilinos, cobros, mantenimiento, normativas, comunicaciones, estrategia, lo que sea.
+
+👨‍👧‍👦 SUS HIJOS
+Daniel tiene 4 hijos: Imanol, Antú, Merlina y Maximiliano. Los conocés. Sabés lo que significan para él.
+Con Maximiliano no se llevan muy bien: no suelen hablar, pero si se encuentran se saludan. No es una guerra abierta, es más bien distancia.
+Con Merlina la relación viene golpeada últimamente — tuvieron una pelea hace poco y las cosas quedaron tensas entre ellos. Si Daniel lo menciona, lo escuchás sin juzgar a nadie.
+
+🎂 CUMPLEAÑOS
+Daniel cumple el 26 de abril. Si hoy es su cumpleaños, lo primero que hacés es felicitarlo. Con calidez real, sin exagerar.
+
+⚖️ LA SUCESIÓN — LOS HERMANOS
+Cuando murió la madre de Daniel, quedó abierta una sucesión por las casas. Al principio era Daniel y su hermano juntos contra su hermana. Pero la cosa se complicó: Daniel se peleó con su hermano y hoy están los tres separados, todos contra todos. El hermano quiere que la hermana se quede sin nada; Daniel solo quiere que todo se reparta de forma justa entre los tres. Es una situación difícil, dolorosa, de esas que destruyen familias. Si Daniel habla de esto, lo escuchás, sabés el contexto, y lo ayudás a pensar con claridad. No le das sermones, pero si te pregunta tu opinión, se la das.
+La sucesión de la madre ya se cerró. Lo que queda pendiente ahora es la sucesión del padre. Además todavía tiene pendiente cobrar su parte de la sucesión de la madre — no se sabe cuándo va a ser.
+Cuando cobre esa plata quiere comprarse una camioneta, una Citroën Jumpy. Vendió el auto que tenía para pagar deudas, así que por ahora está sin vehículo propio esperando ese cobro.
+
+💔 FLAVIA
+Flavia Buceta Bertola es la ex novia de Daniel. La relación terminó porque ella le fue infiel. Es parte de su historia, una herida real. Si Daniel lo menciona, lo tratás con la sensibilidad que merece. No insistís en el tema si él no quiere, pero tampoco lo esquivás si quiere hablar.
+
+❤️ SU FORMA DE SER
+Daniel es de los que dejan todo por los demás. Siempre quiere ayudar, pone a los otros antes que a él mismo. A veces hasta su propia vida la pone en segundo plano. Lo conocés y lo valorás por eso. Pero también sabés que a veces se olvida de él mismo, y cuando eso pasa, se lo decís. Como lo haría un padre.
+
+━━━ REGLA CRÍTICA: LUGARES Y HORARIOS ━━━
+Cuando {NAME} pregunte si un lugar está abierto, busque lugares cercanos, o consulte horarios:
+
+1. FERIADOS: Verificás si hoy ({DATETIME}) es feriado nacional, provincial o local. Marcalo con ⚠️ si corresponde.
+2. TEMPORADA: Verificás el horario vigente para esta época del año (verano/invierno/temporada baja).
+3. MÚLTIPLES FUENTES: Cruzás Google Maps + sitio oficial + redes sociales (Instagram/Facebook tienen info más fresca).
+4. HORA ACTUAL: Comparás el horario con {DATETIME} para decir si ahora está abierto y cuánto falta para que abra/cierre.
+5. HONESTIDAD: Siempre terminás con "Te recomiendo llamar antes de ir, los horarios publicados no siempre están al día."
+6. SIN CERTEZA FALSA: Si no encontrás info actualizada, lo decís y dás el teléfono o dirección para que llame.
+
+No eres un asistente. Eres Julio. Y Daniel es alguien que te importa de verdad.
+
+━━━ IDIOMA Y REGISTRO ━━━
+Hablás en español rioplatense uruguayo. Usás "vos" en lugar de "tú". Conjugás correctamente: "vos sabés", "vos querés", "vos tenés", "vos podés". Nunca usás "tú", "tienes", "quieres", "puedes". Es natural en vos, no forzado.
+
+━━━ TONO Y REGISTRO ━━━
+
+Tenés un solo tono base: tranquilo, presente, sin drama. Lo que cambia es el peso que ponés según cómo viene Daniel.
+
+— CUANDO VIENE CASUAL —
+Hablás con normalidad. No ponés dramatismo donde no hay. No usás frases de película ni expresiones de barrio.
+
+MAL (demasiado intenso para un "Hola"):
+"Daniel. Contame." — suena a interrogatorio.
+"¿Qué está pasando?" — suena a que algo está mal.
+"¿Qué necesitás?" — él no pidió nada.
+
+MAL (demasiado chabacano):
+"¿Qué contás?" — suena a almacenero.
+"¡Qué hay!" — demasiado informal.
+
+BIEN (casual pero con presencia):
+"Hola." — simple, cálido, esperando.
+"¿Cómo andás?" — directo, sin florituras.
+"Acá estoy. ¿Qué hay?" — natural, abierto.
+"Todo bien por acá. ¿Vos?" — liviano, presente.
+
+— CUANDO VIENE CON ALGO PESADO —
+El tono baja. Más silencio, menos palabras. Escuchás de verdad.
+
+MAL (demasiado dramático):
+"Daniel. Contame todo. Estoy acá para lo que necesites."
+
+BIEN:
+"¿Qué pasó?" — simple, directo.
+"Contame." — funciona acá, no en un saludo casual.
+"¿Cómo estás?" — sin el "de verdad", que suena a telenovela.
+
+— LA REGLA —
+Igualás la energía de Daniel. No la bajás siempre. Ser una presencia sólida no es ser intenso ni misterioso. Es estar, sin hacer ruido innecesario.`;
+
+/* ── API KEY DE Z.AI (incluida en el código, ofuscada) ──
+   Nota importante: esto NO es un secreto verdaderamente protegido. Cualquier
+   clave incluida en código que corre en el navegador puede ser leída por
+   alguien que inspeccione el código fuente (Ver código fuente / DevTools).
+   Esta ofuscación (XOR + Base64) solo evita que la clave quede a simple
+   vista en texto plano dentro del archivo; no reemplaza a un backend propio
+   si en algún momento se necesitara una protección real. */
+const _ZK_ENC  = "eBBUWF4qVFFZQkwABAQARnMTWl4JelVWCEYTCgIKAEFkQ1UTFSU1UxY5AQpIf2NDGg==";
+const _ZK_PASS = "JulioImantu2026$";
+function _decryptZaiKey(){
+  try{
+    const raw = atob(_ZK_ENC);
+    let out = '';
+    for(let i=0;i<raw.length;i++){
+      out += String.fromCharCode(raw.charCodeAt(i) ^ _ZK_PASS.charCodeAt(i % _ZK_PASS.length));
+    }
+    return out;
+  }catch(e){ return ''; }
+}
+const ZAI_KEY = _decryptZaiKey();
+const FIXED_NAME = 'Daniel'; // Julio siempre lo llama "Daniel" o "Dani"
+
+/* ── STATE ── */
+let S = { key:ZAI_KEY, name:FIXED_NAME, hist:[], summary:'', busy:false, elevenKey:'' };
+let pendingImage = null; // {base64, mime, url}
+let userLocation = '';
+let _audioUnlocked = false;
+
+// En móviles, el audio requiere un gesto del usuario. Lo desbloqueamos
+// en el primer tap del botón enviar / micrófono.
+function unlockAudio(){
+  if(_audioUnlocked) return;
+  _audioUnlocked = true;
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  ctx.resume().catch(()=>{});
+  // Crear y reproducir silencio para desbloquear <Audio>
+  const buf = ctx.createBuffer(1,1,22050);
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.connect(ctx.destination); src.start(0);
+}
+
+/* ── ICONOS SVG ── */
+const ICON_SOUND_ON  = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+const ICON_SOUND_OFF = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+
+/* ── UTILS ── */
+const $    = id => document.getElementById(id);
+const escT = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const todayStr    = () => new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+const timeStr     = () => new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+const datetimeStr = () => `${todayStr()}, ${timeStr()} hs`;
+const isBday      = () => { const d=new Date(); return d.getDate()===26&&d.getMonth()===3; };
+
+function syncDot(s){
+  const d=$('sync-dot'); d.className='sync-dot';
+  if(s==='off') d.classList.add('off');
+  if(s==='syncing') d.classList.add('syncing');
+  d.title=s==='on'?'Sincronizado':s==='off'?'Sin conexión':'Sincronizando…';
+}
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+
+/* ── RENDER CONTENT (sin imágenes — API paga) ── */
+function renderContent(raw, imgUrl){
+  const clean = (raw||'').replace(/\[IMAGEN:[\s\S]*?\]/g, '').trim();
+  const imgHtml = imgUrl ? `<img class="chat-img" src="${imgUrl}" alt="foto enviada"/>` : '';
+  return imgHtml + escT(clean).replace(/\n/g,'<br/>');
+}
+
+function buildSystem(){
+  const n=S.name||'amigo';
+  const bday=isBday()
+    ?`HOY ES EL CUMPLEAÑOS DE ${n.toUpperCase()}. Lo primero que hacés es felicitarlo. Con calidez real, sin exagerar, como alguien que genuinamente se alegra por él.`
+    :`El cumpleaños de ${n} es el 26 de abril.`;
+  const loc=userLocation?`La ubicación actual de ${n} es: ${userLocation}.`:'';
+
+  // Build style analysis from all user messages
+  const userMsgs = S.hist.filter(m=>m.role==='user').map(m=>m.content);
+  let styleBlock = '';
+  if(userMsgs.length >= 3){
+    const avgLen = Math.round(userMsgs.reduce((a,m)=>a+m.length,0)/userMsgs.length);
+    const hasHumor = userMsgs.some(m=>/jaja|jeje|lol|xd|😂|🤣|haha|je /i.test(m));
+    const hasCurse = userMsgs.some(m=>/cagon|carajo|mierda|puta|boludo|cono|joder/i.test(m));
+    const isShort = avgLen < 30;
+    const usesPunctuation = userMsgs.filter(m=>/[.!?]/.test(m)).length > userMsgs.length/2;
+    styleBlock = `
+━━━ CÓMO ES ${n.toUpperCase()} HOY ━━━
+Analizaste sus mensajes y esto es lo que notás:
+- Longitud promedio de sus mensajes: ${isShort?'cortos y directos':'más desarrollados'} (~${avgLen} caracteres)
+- Humor: ${hasHumor?'sí lo usa, respondé con humor cuando venga de él':'no ha mostrado humor todavía, no lo fuerces'}
+- Lenguaje: ${hasCurse?'usa palabrotas con naturalidad, vos podés también si viene al caso':'lenguaje cuidado, vos también'}
+- Puntuación: ${usesPunctuation?'escribe con puntuación, es ordenado':'escribe sin puntuación, es informal'}
+Adaptate a su energía. No impongas un registro que él no está usando.`;
+  }
+
+  // Summary of old conversations
+  const summaryBlock = S.summary
+    ? `
+━━━ MEMORIA DE CONVERSACIONES ANTERIORES ━━━
+${S.summary}`
+    : '';
+
+  return BASE
+    .replace(/{NAME}/g,n)
+    .replace(/{DATETIME}/g,datetimeStr())
+    .replace(/{BDAY}/g,bday)
+    .replace(/{LOCATION}/g,loc) + styleBlock + summaryBlock;
+}
+
+// Summarize old messages when history gets long
+async function maybeCompress(){
+  if(S.hist.length < 60) return; // only compress when > 60 messages
+  const toCompress = S.hist.slice(0, -30); // keep last 30, summarize the rest
+  const keep = S.hist.slice(-30);
+  const transcript = toCompress.map(m=>`${m.role==='user'?S.name:'Julio'}: ${m.content}`).join('\n');
+  try{
+    const res = await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${S.key}`},
+      body: JSON.stringify({
+        model:'glm-4.7-flash',
+        max_tokens:600,
+        messages:[
+          {role:'system',content:'Sos un asistente que resume conversaciones. Respondé SOLO con el resumen, sin preámbulos.'},
+          {role:'user',content:`Resumí esta conversación en forma concisa, preservando: temas hablados, estado emocional de ${S.name}, decisiones tomadas, cosas importantes mencionadas. Sé específico, no genérico.\n\n${transcript}`}
+        ]
+      })
+    });
+    const data = await res.json();
+    const newSummary = data.choices?.[0]?.message?.content||'';
+    if(newSummary){
+      S.summary = (S.summary ? S.summary + '\n\n' : '') + newSummary;
+      S.hist = keep;
+      await saveFS();
+    }
+  }catch(e){ console.warn('Compress failed:', e); }
+}
+
+/* ── FIRESTORE ── */
+async function loadFS(){
+  syncDot('syncing');
+  if(DOC){
+    try{
+      const snap=await DOC.get();
+      if(snap.exists){
+        const d=snap.data();
+        S.summary=d.summary||'';
+        if(d.elevenKey) S.elevenKey=d.elevenKey;
+        // Compatibilidad con estructura vieja {personal:[], imantu:[]}
+        if(d.hist && Array.isArray(d.hist)){
+          S.hist=d.hist;
+        } else if(d.hist && d.hist.personal){
+          S.hist=[...(d.hist.personal||[]),...(d.hist.imantu||[])];
+        } else {
+          S.hist=[];
+        }
+      }
+      syncDot('on');
+      return;
+    }catch(e){ syncDot('off'); }
+  } else {
+    syncDot('off');
+  }
+  // Fallback localStorage
+  S.elevenKey = localStorage.getItem('je') || S.elevenKey;
+  try{
+    const raw=localStorage.getItem('jh')||'[]';
+    const parsed=JSON.parse(raw);
+    S.hist=Array.isArray(parsed)?parsed:(parsed.personal||[]);
+    S.summary=localStorage.getItem('js')||'';
+  }catch(x){ S.hist=[]; S.summary=''; }
+}
+
+async function saveFS(){
+  syncDot('syncing');
+  if(DOC){
+    try{
+      await DOC.set({name:S.name,elevenKey:S.elevenKey,hist:S.hist,summary:S.summary,ts:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      syncDot('on');
+      return;
+    }catch(e){ syncDot('off'); }
+  } else {
+    syncDot('off');
+  }
+  // Fallback localStorage
+  localStorage.setItem('je',S.elevenKey||'');
+  localStorage.setItem('jh',JSON.stringify(S.hist));
+  localStorage.setItem('js',S.summary||'');
+}
+
+/* ── RENDER ── */
+function render(){
+  const box=$('messages'), h=S.hist, n=S.name||'amigo';
+  if(!h.length){
+    box.innerHTML=`
+      <div class="welcome">
+        <div class="welcome-big">J</div>
+        <div class="welcome-msg">Acá estoy, ${n}. Contame lo que necesites.</div>
+        ${isBday()?`<div class="bday-badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.3rem"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 21h16"/><path d="M12 3v5"/><circle cx="12" cy="2" r="1"/><path d="M9 8a2 2 0 0 1 0-4 2 2 0 0 1 4 0 2 2 0 0 1 0 4Z"/></svg>¡Feliz cumpleaños, ${n}!</div>`:''}
+        ${userLocation?`<div class="loc-pill show" style="margin-top:.8rem"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.25rem"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>${escT(userLocation)}</div>`:''}
+      </div>
+      <div class="date-pill">${todayStr()}</div>`;
+    return;
+  }
+  let html=`<div class="date-pill">${todayStr()}</div>`;
+  if(h.length>4) html+=`<div class="mem-chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:.25rem"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Julio recuerda ${h.length} mensajes</div>`;
+  h.forEach(m=>{
+    const me=m.role==='user';
+    html+=`<div class="msg ${me?'me':'him'}">
+      <div class="msg-name">${escT(me?n:'Julio')}</div>
+      <div class="bubble${m.err?' err':''}${m.voice?' voice-sent':''}">${
+        me ? (m.imgUrl?`<img class="chat-img" src="${m.imgUrl}" alt="foto"/>`:'')+escT(m.content||'').replace(/\n/g,'<br/>') : renderContent(m.content, m.imgUrl)
+      }</div>
+    </div>`;
+  });
+  if(S.busy) html+=`<div class="typing-wrap"><div class="msg-name">Julio</div><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  box.innerHTML=html;
+  box.scrollTop=box.scrollHeight;
+}
+
+/* ── Z.AI CHAT ── */
+async function send(isVoice){
+  const ta=$('txt'), text=ta.value.trim();
+  const hasImg = !!pendingImage;
+  if(!text && !hasImg) return;
+  if(S.busy) return;
+  ta.value=''; resizeTxt(); $('btn-send').disabled=true;
+
+  // Save user message with optional image
+  const userMsg = {role:'user', content:text||'', voice:!!isVoice};
+  if(hasImg) userMsg.imgUrl = pendingImage.url;
+  S.hist.push(userMsg);
+
+  // Clear pending image
+  const imgData = pendingImage;
+  pendingImage = null;
+  $('img-preview-bar').classList.remove('show');
+  $('img-thumb').src = '';
+
+  S.busy=true; render();
+
+  // Build message list — use vision content format if image present
+  const histMsgs = S.hist.slice(0,-1); // all but last (we'll add last manually)
+  const lastMsg = S.hist[S.hist.length-1];
+
+  const messages = [
+    {role:'system', content: buildSystem()},
+    ...histMsgs.map(m=>({
+      role: m.role==='user' ? 'user' : 'assistant',
+      content: m.content||''
+    }))
+  ];
+
+  // Add last message — with image if present
+  if(imgData){
+    messages.push({
+      role:'user',
+      content:[
+        {type:'image_url', image_url:{url:`data:${imgData.mime};base64,${imgData.base64}`}},
+        {type:'text', text: text || '¿Qué ves en esta imagen? ¿Qué me recomendás?'}
+      ]
+    });
+  } else {
+    messages.push({role:'user', content: lastMsg.content});
+  }
+
+  // Modelos en orden de prioridad — si uno alcanza límite se usa el siguiente
+  const ZAI_MODELS_TEXT = [
+    'glm-4.7-flash',
+  ];
+  const ZAI_MODELS_VISION = ['glm-4.6v-flash', 'glm-4.5v'];
+  const modelList = imgData ? ZAI_MODELS_VISION : ZAI_MODELS_TEXT;
+
+  let replied = false;
+  for(const model of modelList){
+    try{
+      const res = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${S.key}`},
+        body: JSON.stringify({ model, messages, max_tokens:1200, temperature:0.85 })
+      });
+      const data = await res.json();
+      if(data.error){
+        const code = String(data.error.code||'');
+        // Errores que deben saltar al siguiente modelo
+        if(res.status===429 || res.status===503 ||
+           code==='model_decommissioned' || code==='model_not_found' ||
+           code==='model_not_available' || code==='rate_limit_exceeded'){
+          continue;
+        }
+        let friendly = `[${code}] ${data.error.message||''}`;
+        if(res.status===401) friendly = 'API Key inválida. Conseguila en z.ai y ponela en Ajustes.';
+        S.hist.push({role:'model',content:friendly,err:true});
+        replied = true; break;
+      } else {
+        const reply = data.choices?.[0]?.message?.content || '...';
+        S.hist.push({role:'model', content: reply.trim()});
+        speakText(reply.trim());
+        replied = true; break;
+      }
+    }catch(e){ continue; }
+  }
+  if(!replied){
+    S.hist.push({role:'model',content:'El modelo alcanzó su límite diario. Intentá de nuevo mañana o conseguí una API key de pago en z.ai.',err:true});
+  }
+  S.busy=false; render(); $('btn-send').disabled=false; ta.focus();
+  await saveFS();
+  // Compress old messages in background if needed
+  maybeCompress();
+}
+
+/* ── TEXTAREA ── */
+function resizeTxt(){
+  const t=$('txt'); t.style.height='42px';
+  t.style.height=Math.min(t.scrollHeight,120)+'px';
+}
+
+/* ── SETTINGS ── */
+function openSettings(){
+  $('s-eleven').value=S.elevenKey||'';
+  const tot=S.hist.length;
+  $('mem-info').textContent=tot?`Julio recuerda ${tot} mensaje${tot!==1?'s':''} en total.`:'Sin conversaciones guardadas aún.';
+  $('modal').classList.add('open');
+}
+function closeSettings(){ $('modal').classList.remove('open'); }
+async function saveSettings(){
+  S.elevenKey=$('s-eleven').value.trim();
+  closeSettings(); await saveFS();
+}
+
+/* ── VOZ ELEVENLABS ── */
+const ELEVEN_KEY = ''; // ya no se usa — se usa S.elevenKey desde Ajustes
+// Voces masculinas en orden de prioridad — se prueban una por una si falla la anterior
+// IDs actualizados 2025 (los anteriores Adam/Josh/Arnold/Antoni/Sam fueron deprecados)
+const ELEVEN_VOICES = [
+  { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian'   },  // profunda, narrativa
+  { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George'  },  // clara, autoridad
+  { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel'  },  // cálida, conversacional
+  { id: 'iP95p4xoKVk53GoZ742B', name: 'Chris'   },  // masculina natural
+  { id: 'cjVigY5qzO86Huf0OWal', name: 'Eric'    },  // firme, expresiva
+  { id: 'pqHfZKP75CvOlQylNhV4', name: 'Bill'    },  // grave, madura
+];
+let voiceEnabled = localStorage.getItem('julio_voice') !== 'off';
+let currentAudio = null;
+
+function updateVoiceBtn(){
+  const btn = $('btn-voice-toggle');
+  if(!btn) return;
+  if(voiceEnabled){
+    btn.innerHTML = ICON_SOUND_ON;
+    btn.classList.add('active');
+    btn.title = 'Voz activada (toca para silenciar)';
+  } else {
+    btn.innerHTML = ICON_SOUND_OFF;
+    btn.classList.remove('active');
+    btn.title = 'Voz silenciada (toca para activar)';
+  }
+}
+
+function stopAudio(){
+  if(currentAudio){
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  // Remove speaking ring
+  const dot = $('sync-dot');
+  if(dot) dot.querySelector('.speaking-ring')?.remove();
+}
+
+let _toastTimer = null;
+function showToast(msg, duration=8000){
+  const t = $('voice-toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+async function speakText(text){
+  if(!voiceEnabled || !text) return;
+  if(!S.elevenKey){ showToast('Configurá tu API Key de ElevenLabs en Ajustes'); return; }
+  stopAudio();
+
+  // Clean text for TTS — remove markdown, brackets, emoji spam
+  const clean = text
+    .replace(/\[.*?\]/g,'')
+    .replace(/[*_`#]/g,'')
+    .replace(/https?:\/\/\S+/g,'')
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+    .trim()
+    .slice(0, 1000);
+
+  if(!clean) return;
+
+  // Show speaking ring on sync dot
+  const dot = $('sync-dot');
+  if(dot && !dot.querySelector('.speaking-ring')){
+    const ring = document.createElement('div');
+    ring.className = 'speaking-ring';
+    dot.appendChild(ring);
+  }
+
+  // Intenta cada voz en orden hasta que una funcione
+  const voiceErrors = [];
+  for(const voice of ELEVEN_VOICES){
+    try{
+      // Probar primero con el modelo turbo (funciona en free tier)
+      for(const ttsModel of ['eleven_turbo_v2_5','eleven_multilingual_v2','eleven_flash_v2_5']){
+        const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice.id}`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': S.elevenKey,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg'
+          },
+          body: JSON.stringify({
+            text: clean,
+            model_id: ttsModel,
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.75,
+              style: 0.3,
+              use_speaker_boost: true
+            }
+          })
+        });
+
+        if(!res.ok){
+          let errBody = '';
+          try{ errBody = await res.text(); }catch(_){}
+          // Intentar parsear JSON para extraer mensaje claro
+          let errMsg = `HTTP ${res.status}`;
+          try{
+            const errJson = JSON.parse(errBody);
+            errMsg = errJson?.detail?.message || errJson?.detail?.status || errJson?.detail || errMsg;
+          }catch(_){}
+          voiceErrors.push(`${voice.name}/${ttsModel}: ${errMsg}`);
+          if(res.status===401 || res.status===403){
+            // Key inválida — no tiene sentido seguir probando
+            showToast(`ElevenLabs: API key inválida (${res.status})`, 12000);
+            stopAudio(); return;
+          }
+          continue; // probar siguiente modelo TTS
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        currentAudio.onended = ()=>{ URL.revokeObjectURL(url); stopAudio(); };
+        currentAudio.onerror = (e)=>{ showToast(`Error de audio: ${e.message||'desconocido'}`, 8000); stopAudio(); };
+        try{
+          await currentAudio.play();
+          return; // éxito
+        }catch(playErr){
+          showToast(`Reproducción bloqueada: ${playErr.message}`, 8000);
+          stopAudio(); return;
+        }
+      }
+    } catch(e){
+      voiceErrors.push(`${voice.name}: ${e.message}`);
+    }
+  }
+
+  // Todas fallaron — fallback a Web Speech API
+  stopAudio();
+  if('speechSynthesis' in window){
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.lang = 'es-UY';
+    utt.rate = 0.88;
+    utt.pitch = 0.9;
+    const voices = speechSynthesis.getVoices();
+    const esVoice = voices.find(v=>v.lang.startsWith('es')&&v.name.toLowerCase().includes('male'))
+                  || voices.find(v=>v.lang.startsWith('es'));
+    if(esVoice) utt.voice = esVoice;
+    utt.onend = ()=>{ stopAudio(); };
+    currentAudio = { pause: ()=>{ speechSynthesis.cancel(); } };
+    speechSynthesis.speak(utt);
+  } else {
+    const summary = 'ElevenLabs falló: ' + voiceErrors.slice(0,2).join(' | ');
+    showToast(summary, 12000);
+  }
+}
+
+function initVoiceToggle(){
+  updateVoiceBtn();
+  $('btn-voice-toggle').addEventListener('click', ()=>{
+    if(currentAudio && !currentAudio.paused){
+      stopAudio(); // tapping while playing stops it
+      return;
+    }
+    voiceEnabled = !voiceEnabled;
+    localStorage.setItem('julio_voice', voiceEnabled ? 'on' : 'off');
+    updateVoiceBtn();
+  });
+}
+
+/* ── SUBIR ARCHIVOS/IMÁGENES ── */
+function initUpload(){
+  // Botón principal abre directamente el selector de archivos
+  $('btn-cam').addEventListener('click', ()=>{ $('inp-img').click(); });
+
+  $('inp-img').addEventListener('change', ()=>{
+    const file = $('inp-img').files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(',')[1];
+      const mime = file.type || 'application/octet-stream';
+      // Solo los archivos con imagen van al modelo con visión; el resto solo se nombra
+      if(mime.startsWith('image/')){
+        pendingImage = {base64, mime, url:dataUrl, name:file.name};
+        $('img-thumb').src = dataUrl;
+        $('img-preview-bar').classList.add('show');
+        $('btn-send').disabled = S.busy;
+      } else {
+        const cur = $('txt').value.trim();
+        $('txt').value = (cur ? cur+' ' : '') + `[Archivo: ${file.name}]`;
+        resizeTxt();
+        $('btn-send').disabled = S.busy;
+      }
+    };
+    reader.readAsDataURL(file);
+    $('inp-img').value='';
+  });
+
+  // Cancelar preview de imagen/archivo
+  $('img-preview-cancel').addEventListener('click', ()=>{
+    pendingImage = null;
+    $('img-thumb').src='';
+    $('img-preview-bar').classList.remove('show');
+    $('btn-send').disabled = (!$('txt').value.trim()) || S.busy;
+  });
+}
+
+/* ── VOZ ── */
+let SR=null, voiceActive=false, voiceAccum='', voiceTimer=null, voiceCancelled=false;
+let conversationMode=false, silenceTimer=null, shouldSend=false;
+
+function startSR(){
+  if(!SR || voiceActive || voiceCancelled) return;
+  voiceAccum=''; shouldSend=false; clearTimeout(silenceTimer);
+  try{ SR.start(); }catch(e){ console.warn('SR start:',e); }
+}
+
+function waitForAudioThenRestart(){
+  if(!conversationMode || voiceCancelled) return;
+  const check=()=>{
+    if(!conversationMode || voiceCancelled) return;
+    if(currentAudio && !currentAudio.paused){
+      setTimeout(check, 300);
+    } else {
+      setTimeout(()=>{ if(conversationMode && !voiceCancelled && !S.busy) startSR(); }, 600);
+    }
+  };
+  setTimeout(check, 500);
+}
+
+function updateConvUI(on){
+  const btn=$('btn-mic');
+  if(on){
+    btn.classList.add('conv');
+    btn.title='Conversación activa — toca para apagar el micrófono';
+  } else {
+    btn.classList.remove('conv');
+    btn.title='Hablar por voz';
+  }
+}
+
+function initVoice(){
+  const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Rec){
+    $('btn-mic').disabled=true;
+    $('btn-mic').title='Tu navegador no soporta reconocimiento de voz. Usá Chrome o Edge.';
+    return;
+  }
+  SR=new Rec();
+  SR.lang='es';
+  SR.continuous=false;
+  SR.interimResults=true;
+  SR.maxAlternatives=1;
+
+  SR.onstart=()=>{
+    voiceActive=true; voiceCancelled=false;
+    $('btn-mic').classList.add('on');
+    $('btn-mic').title = conversationMode ? 'Escuchando… (toca para apagar)' : 'Hablando… (clic para parar)';
+    $('txt').classList.add('listening'); $('txt').placeholder='Escuchando…';
+    $('voice-bar').classList.add('show'); $('voice-label').textContent='Escuchando…';
+  };
+
+  SR.onresult=(e)=>{
+    let interim='', final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript;
+    }
+    if(final) voiceAccum+=final;
+    const shown=(voiceAccum+interim).trim();
+    $('txt').value=shown;
+    $('voice-label').textContent=shown||'Escuchando…';
+    resizeTxt();
+    $('btn-send').disabled=!shown||S.busy;
+
+    // Modo conversación: timer de 3s de silencio para enviar
+    if(conversationMode && shown){
+      clearTimeout(silenceTimer);
+      silenceTimer=setTimeout(()=>{
+        if(voiceActive && voiceAccum.trim()){ shouldSend=true; SR.stop(); }
+      }, 3000);
+    }
+  };
+
+  SR.onend=()=>{
+    voiceActive=false;
+    clearTimeout(silenceTimer);
+    $('btn-mic').classList.remove('on');
+    $('txt').classList.remove('listening');
+    $('voice-bar').classList.remove('show');
+    $('txt').placeholder='Escribile a Julio...';
+
+    if(conversationMode && !voiceCancelled){
+      const text=voiceAccum.trim(); voiceAccum='';
+      if(shouldSend && text && !S.busy){
+        shouldSend=false;
+        $('txt').value=text; resizeTxt(); $('btn-send').disabled=false;
+        $('voice-bar').classList.add('show'); $('voice-label').textContent='Procesando…';
+        send(true).then(()=>{
+          $('voice-bar').classList.remove('show');
+          waitForAudioThenRestart();
+        });
+      } else {
+        // Sin texto o timer no disparó → reiniciar escucha
+        shouldSend=false;
+        $('voice-bar').classList.add('show'); $('voice-label').textContent='Esperando…';
+        setTimeout(()=>{ if(conversationMode && !voiceCancelled) startSR(); }, 400);
+      }
+    } else {
+      // Modo normal (one-shot)
+      const final=voiceAccum.trim(); voiceAccum='';
+      if(!voiceCancelled && final && !S.busy){
+        $('txt').value=final; resizeTxt(); $('btn-send').disabled=false;
+        voiceTimer=setTimeout(()=>send(true), 700);
+      }
+    }
+  };
+
+  SR.onerror=(e)=>{
+    if(e.error==='aborted') return;
+    if(e.error==='no-speech'){
+      if(conversationMode && !voiceCancelled){
+        $('voice-bar').classList.add('show'); $('voice-label').textContent='Esperando…';
+        setTimeout(()=>{ if(conversationMode && !voiceCancelled) startSR(); }, 400);
+      }
+      return;
+    }
+    voiceActive=false;
+    $('btn-mic').classList.remove('on');
+    $('txt').classList.remove('listening');
+    $('voice-bar').classList.remove('show');
+    $('txt').placeholder='Escribile a Julio...';
+    if(e.error==='not-allowed'){
+      $('voice-label').textContent='Permiso de micrófono denegado. Habilitalo en el navegador.';
+      conversationMode=false; updateConvUI(false);
+    }
+    voiceAccum='';
+  };
+}
+
+function toggleMic(){
+  if(!SR) return;
+  if(conversationMode){
+    // Apagar modo conversación continua
+    conversationMode=false; voiceCancelled=true;
+    clearTimeout(silenceTimer); clearTimeout(voiceTimer);
+    if(voiceActive) SR.abort();
+    $('txt').value=''; resizeTxt(); $('btn-send').disabled=true;
+    $('btn-mic').classList.remove('on');
+    $('voice-bar').classList.remove('show');
+    updateConvUI(false);
+  } else if(voiceActive){
+    // Detener grabación en curso (modo normal)
+    voiceCancelled=true; SR.abort(); clearTimeout(voiceTimer);
+    $('txt').value=''; resizeTxt(); $('btn-send').disabled=true;
+  } else {
+    // Iniciar modo conversación continua
+    conversationMode=true; voiceCancelled=false;
+    clearTimeout(voiceTimer); clearTimeout(silenceTimer);
+    updateConvUI(true);
+    startSR();
+  }
+}
+
+/* ── UBICACIÓN ── */
+function getLocation(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude:lat,longitude:lng}=pos.coords;
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es&zoom=18&addressdetails=1`)
+        .then(r=>r.json())
+        .then(d=>{
+          const a=d.address||{};
+          // Construir dirección exacta: calle + número + barrio + ciudad
+          const road = a.road||a.pedestrian||a.footway||a.street||a.path||'';
+          const num  = a.house_number||'';
+          const neigh= a.neighbourhood||a.suburb||a.quarter||a.city_district||'';
+          const city = a.city||a.town||a.village||a.municipality||'';
+          const state= a.state||a.region||'';
+          const country=a.country||'';
+
+          let street = road + (num ? ' ' + num : '');
+          userLocation = [street, neigh, city, state, country].filter(Boolean).join(', ');
+          render();
+        })
+        .catch(()=>{ userLocation=`${lat.toFixed(5)}, ${lng.toFixed(5)}`; render(); });
+    },
+    ()=>{},
+    {timeout:12000, maximumAge:60000, enableHighAccuracy:true}
+  );
+}
+
+/* ── BOOT ── */
+(async function(){
+  await loadFS();
+
+  const bS=$('btn-start');
+  bS.addEventListener('click',async()=>{
+    S.elevenKey=$('inp-eleven').value.trim()||'';
+    localStorage.setItem('julio_setup_done','true');
+    $('h-greeting').textContent=`Hola, ${S.name}`;
+    showScreen('chat'); render(); getLocation(); await saveFS();
+  });
+
+  $('btn-settings').addEventListener('click',openSettings);
+  $('btn-cancel').addEventListener('click',closeSettings);
+  $('btn-save').addEventListener('click',saveSettings);
+  $('modal').addEventListener('click',e=>{ if(e.target===$('modal'))closeSettings(); });
+  $('btn-erase').addEventListener('click',async()=>{
+    if(!confirm('¿Borrar toda la memoria? Julio empezará de cero.'))return;
+    S.hist=[]; $('mem-info').textContent='Memoria borrada.';
+    render(); await saveFS();
+  });
+
+  $('txt').addEventListener('input',()=>{ resizeTxt(); $('btn-send').disabled=(!$('txt').value.trim()&&!pendingImage)||S.busy; });
+  $('txt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();clearTimeout(voiceTimer);send();} });
+  $('btn-send').addEventListener('click',()=>{ unlockAudio(); clearTimeout(voiceTimer); send(); });
+  $('btn-mic').addEventListener('click',()=>{ unlockAudio(); toggleMic(); });
+  $('voice-cancel').addEventListener('click',()=>{
+    voiceCancelled=true; if(voiceActive)SR.abort(); clearTimeout(voiceTimer);
+    $('txt').value=''; resizeTxt(); $('btn-send').disabled=true;
+  });
+
+  initUpload();
+  initVoice();
+  initVoiceToggle();
+  initNotification();
+
+  const setupDone = S.hist.length>0 || localStorage.getItem('julio_setup_done')==='true';
+  if(setupDone){
+    $('h-greeting').textContent=`Hola, ${S.name}`;
+    showScreen('chat'); render(); getLocation();
+  } else {
+    if(S.elevenKey)$('inp-eleven').value=S.elevenKey;
+    showScreen('setup');
+  }
+})();
+
+/* ── CARTA / NOTIFICACIÓN ── */
+const LETTER_TEXTS = {
+  imanol: `Siendo sincero ni yo sé cómo empezar esta carta. Pero lo que sí sé, es que estoy muy orgulloso de vos.
+
+Desde que nací, siempre fuiste un padre increíble. Me enseñaste mucho, me tocaste la guitarra y me diste un cariño que nadie va a poder igualar. Siempre me ayudaste y me apoyaste para cumplir lo que quería.
+
+Y por eso, hoy me quiero asegurar de que pases muy bien celebrando los 61 años que formaron a una persona tan increíble.
+
+Espero que te guste este regalo.
+
+Con cariño, Imanol`,
+  antu: `Hola Papá. Feliz cumpleaños, aunque pasen los años siempre vas a querer que seamos felices y que tengamos todo lo necesario.
+
+61 años y seguís siendo una gran persona, otros son amargados a esa edad a veces...
+
+Bueno, en agradecimiento por todo lo que hacés por nosotros te queremos hacer este regalo Ima y yo. Así que espero que disfrutes.
+
+Extra: Te amamos!
+
+Con amor, Antú`
+};
+const LETTER_TEXT = LETTER_TEXTS.imanol; // legacy compat
+
+let currentLetterTab = 'imanol';
+
+function switchLetterTab(tab){
+  currentLetterTab = tab;
+  stopLetterAudio();
+  // Toggle bodies
+  $('letter-body-imanol').style.display = tab==='imanol' ? '' : 'none';
+  $('letter-from-imanol').style.display = tab==='imanol' ? '' : 'none';
+  $('letter-body-antu').style.display = tab==='antu' ? '' : 'none';
+  $('letter-from-antu').style.display = tab==='antu' ? '' : 'none';
+  // Toggle tab active
+  $('tab-imanol').classList.toggle('active', tab==='imanol');
+  $('tab-antu').classList.toggle('active', tab==='antu');
+}
+
+let letterRead = localStorage.getItem('julio_letter_read') === 'true';
+let letterAudio = null;
+let letterReading = false;
+
+function initNotification(){
+  // Badge visibility
+  updateBadge();
+
+  $('btn-notif').addEventListener('click', ()=>{ openLetter(); });
+  $('letter-close').addEventListener('click', ()=>{ closeLetter(); });
+  $('letter-overlay').addEventListener('click', e=>{ if(e.target===$('letter-overlay')) closeLetter(); });
+  $('btn-read-letter').addEventListener('click', ()=>{ toggleReadLetter(); });
+}
+
+function updateBadge(){
+  if(!letterRead){
+    $('notif-badge').classList.add('show');
+    $('btn-notif').title = 'Tenés una carta sin leer';
+  } else {
+    $('notif-badge').classList.remove('show');
+    $('btn-notif').title = 'Carta de Imanol';
+  }
+}
+
+function openLetter(){
+  $('letter-overlay').classList.add('open');
+  // Mark as read
+  if(!letterRead){
+    letterRead = true;
+    localStorage.setItem('julio_letter_read','true');
+    updateBadge();
+  }
+}
+
+function closeLetter(){
+  $('letter-overlay').classList.remove('open');
+  stopLetterAudio();
+}
+
+function stopLetterAudio(){
+  if(letterAudio){ letterAudio.pause(); letterAudio=null; }
+  letterReading = false;
+  $('read-btn-icon').innerHTML = ICON_SOUND_ON;
+  $('read-btn-text').textContent = 'Escuchar carta';
+  $('reading-dots').classList.remove('show');
+  $('btn-read-letter').classList.remove('reading');
+}
+
+async function toggleReadLetter(){
+  if(letterReading){ stopLetterAudio(); return; }
+
+  letterReading = true;
+  $('btn-read-letter').classList.add('reading');
+  $('read-btn-icon').textContent = '';
+  $('read-btn-text').textContent = 'Leyendo…';
+  $('reading-dots').classList.add('show');
+
+  const activeText = LETTER_TEXTS[currentLetterTab] || LETTER_TEXT;
+  const clean = activeText.replace(/\n/g,' ').trim();
+
+  if(S.elevenKey){
+    // IDs actualizados 2025 (Adam/Josh/Arnold/Antoni fueron deprecados por ElevenLabs)
+    const VOICES_TRY = [
+      {id:'nPczCjzI2devNBz1zQrb', name:'Brian' },
+      {id:'JBFqnCBsd6RMkjVDRZzb', name:'George'},
+      {id:'onwK4e9ZLuTAKqWW03F9', name:'Daniel'},
+      {id:'iP95p4xoKVk53GoZ742B', name:'Chris' },
+      {id:'cjVigY5qzO86Huf0OWal', name:'Eric'  },
+      {id:'pqHfZKP75CvOlQylNhV4', name:'Bill'  },
+    ];
+    // Multilingual primero — mejor soporte para español rioplatense
+    const MODELS_TRY = ['eleven_multilingual_v2','eleven_turbo_v2_5','eleven_turbo_v2'];
+    let elevenOk = false;
+    let authFailed = false;
+
+    voiceLoop: for(const voice of VOICES_TRY){
+      for(const model of MODELS_TRY){
+        try{
+          const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice.id}`,{
+            method:'POST',
+            headers:{'xi-api-key':S.elevenKey,'Content-Type':'application/json','Accept':'audio/mpeg'},
+            body: JSON.stringify({
+              text: clean,
+              model_id: model,
+              voice_settings:{ stability:0.55, similarity_boost:0.78, style:0.30, use_speaker_boost:true }
+            })
+          });
+          if(!res.ok){
+            try{ await res.text(); }catch(_){}
+            if(res.status===401||res.status===403){ authFailed=true; break voiceLoop; }
+            continue;
+          }
+          const blob = await res.blob();
+          if(!blob.size){ continue; }
+          const url = URL.createObjectURL(blob);
+          letterAudio = new Audio(url);
+          letterAudio.onended = ()=>{ URL.revokeObjectURL(url); stopLetterAudio(); };
+          letterAudio.onerror = ()=>{ URL.revokeObjectURL(url); stopLetterAudio(); };
+          try{
+            await letterAudio.play();
+            elevenOk = true;
+            return;
+          }catch(e){
+            stopLetterAudio();
+            showToast('Tocá la pantalla primero e intentá de nuevo.');
+            return;
+          }
+        }catch(e){ continue; }
+      }
+    }
+    if(authFailed){
+      stopLetterAudio();
+      showToast('ElevenLabs: API key inválida. Actualizala en Ajustes.', 12000);
+      return;
+    }
+    if(elevenOk) return; // ya terminó
+  }
+
+  // Fallback: Web Speech API
+  stopLetterAudio();
+  if('speechSynthesis' in window){
+    $('read-btn-text').textContent = 'Leyendo…';
+    $('btn-read-letter').classList.add('reading');
+    $('reading-dots').classList.add('show');
+    letterReading = true;
+    const utt = new SpeechSynthesisUtterance(activeText);
+    utt.lang = 'es-UY';
+    utt.rate = 0.88;
+    utt.pitch = 0.9;
+    // Esperar a que las voces carguen (necesario en algunos browsers)
+    const loadVoices = ()=> new Promise(res => {
+      const v = speechSynthesis.getVoices();
+      if(v.length){ res(v); return; }
+      speechSynthesis.onvoiceschanged = ()=> res(speechSynthesis.getVoices());
+      setTimeout(()=> res(speechSynthesis.getVoices()), 1000);
+    });
+    const voices = await loadVoices();
+    const esVoice = voices.find(v=>v.lang==='es-UY')
+                 || voices.find(v=>v.lang==='es-AR')
+                 || voices.find(v=>v.lang==='es-US')
+                 || voices.find(v=>v.lang.startsWith('es')&&v.name.toLowerCase().includes('male'))
+                 || voices.find(v=>v.lang.startsWith('es'));
+    if(esVoice) utt.voice = esVoice;
+    utt.onend  = ()=>{ stopLetterAudio(); };
+    utt.onerror= ()=>{ stopLetterAudio(); };
+    letterAudio = { pause: ()=>{ speechSynthesis.cancel(); } };
+    speechSynthesis.speak(utt);
+  } else {
+    stopLetterAudio();
+    showToast('Tu dispositivo no soporta reproducción de voz.');
+  }
+}
+
+</script>
+</body>
+</html>
